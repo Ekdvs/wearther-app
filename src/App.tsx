@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './App.css';
+import { useQuery } from '@tanstack/react-query';
 
 type CityWeather = {
   name: string;
@@ -20,30 +21,34 @@ type CityWeather = {
 
 function App() {
   const [searchCity, setSearchCity] = useState("Colombo");
-  const [cityData, setCityData] = useState<CityWeather | null>(null);
+  const API_key = process.env.REACT_APP_WEATHER_API_KEY||'';
 
-  const API_key = "1864e11174c47bd3604b18227edfc618";
+  const fetchWeather = async (): Promise<CityWeather> => {
+    const response = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=${searchCity}&appid=${API_key}&units=metric`
+    );
+console.log("API KEY:", process.env.REACT_APP_WEATHER_API_KEY);
 
-  useEffect(() => {
-    const fetchWeather = async () => {
-      try {
-        const response = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?q=${searchCity}&appid=${API_key}&units=metric`
-        );
+    if (!response.ok) {
+      throw new Error('Failed to fetch data');
+    }
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch data');
-        }
+    return response.json();
+  };
 
-        const data: CityWeather = await response.json();
-        setCityData(data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
+  const { data, isLoading, error } = useQuery<CityWeather>({
+    queryKey: ['weather', searchCity], // refetches when searchCity changes
+    queryFn: fetchWeather,
+  });
 
-    fetchWeather();
-  }, [searchCity]);
+  if (isLoading) {
+    return <h2>Loading...</h2>;
+    
+  }
+
+  if (error) {
+    return <p>Error fetching data</p>;
+  }
 
   return (
     <div className="App">
@@ -55,17 +60,17 @@ function App() {
           placeholder="Enter city"
         />
 
-        {cityData && (
+        {data && (
           <ul>
-            <li>City: {cityData.name}</li>
-            <li>County:{cityData.sys.country}</li>
-            <li>Feels like: {cityData.main.feels_like} °C</li>
-            <li>Humidity: {cityData.main.humidity}%</li>
-            <li>Weather: {cityData.weather[0].main}</li>
+            <li>City: {data.name}</li>
+            <li>Country: {data.sys.country}</li>
+            <li>Feels like: {data.main.feels_like} °C</li>
+            <li>Humidity: {data.main.humidity}%</li>
+            <li>Weather: {data.weather[0].main}</li>
             <li>
               <img
-                src={`https://openweathermap.org/img/wn/${cityData.weather[0].icon}@2x.png`}
-                alt={cityData.weather[0].main}
+                src={`https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`}
+                alt={data.weather[0].main}
               />
             </li>
           </ul>
