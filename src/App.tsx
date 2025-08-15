@@ -57,7 +57,8 @@ function App() {
 
         {cityData && (
           <ul>
-            <li>City: {cityData.name}, {cityData.sys.country}</li>
+            <li>City: {cityData.name}</li>
+            <li>County:{cityData.sys.country}</li>
             <li>Feels like: {cityData.main.feels_like} °C</li>
             <li>Humidity: {cityData.main.humidity}%</li>
             <li>Weather: {cityData.weather[0].main}</li>
